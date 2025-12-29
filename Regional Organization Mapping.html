@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organisation Mapping by Region</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 20px; 
+            font-family: "Segoe UI", sans-serif;
+            background-color: #ffffff; 
+            height: 100vh;
+            overflow: hidden;
+        }
+        h2 { font-size: 24px; font-weight: 600; margin-bottom: 20px; color: #323130; }
+        #map { width: 100%; height: calc(100vh - 80px); background-color: #ffffff; }
+
+        .custom-tooltip {
+            background: #ffffff;
+            border: 1px solid #edebe9;
+            padding: 8px 12px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 3px 7px rgba(0,0,0,0.1);
+            color: #323130;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Organisation Mapping by Region</h2>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // --- 1. CONFIGURATION: PASTE YOUR URLS HERE ---
+        const divisionLinks = {
+            "Americas": "https://iccint-my.sharepoint.com/personal/debora_draghi_icc-cpi_int/Lists/Regional%20Organisations%20%20Mapping/AllItems.aspx?viewid=9098d89e%2D39d2%2D40d1%2Da9a8%2D769d659fb372",
+            "Africa":   "https://iccint-my.sharepoint.com/personal/debora_draghi_icc-cpi_int/Lists/Regional%20Organisations%20%20Mapping/AllItems.aspx?viewid=6c9127a3%2D44c3%2D4d75%2Dba5d%2D846224f22930",
+            "Asia":     "https://iccint-my.sharepoint.com/personal/debora_draghi_icc-cpi_int/Lists/Regional%20Organisations%20%20Mapping/AllItems.aspx?viewid=0d04dc13%2D19c9%2D4bc3%2Da563%2Dc899cf70c2c8",
+            "Europe":   "",
+            "Oceania":  "https://iccint-my.sharepoint.com/personal/debora_draghi_icc-cpi_int/Lists/Regional%20Organisations%20%20Mapping/AllItems.aspx?viewid=e25dcb20%2Dea71%2D4375%2Db9bb%2D7c04acfa222a"
+        };
+
+        // 2. Initialize Map
+        var map = L.map('map', {
+            center: [25, 0], 
+            zoom: 2.3,
+            minZoom: 2,
+            attributionControl: false
+        });
+
+        // 3. Define Regional Categories (ISO Codes)
+        const regions = {
+            "Americas": ["ABW", "AIA", "ARG", "ATG", "BHS", "BLZ", "BMU", "BOL", "BRA", "BRB", "CAN", "CHL", "COL", "CRI", "CUB", "CUW", "CYM", "DMA", "DOM", "ECU", "FLK", "GLP", "GRD", "GRL", "GTM", "GUF", "GUY", "HND", "HTI", "JAM", "KNA", "LCA", "MEX", "MSR", "MTQ", "NIC", "PAN", "PER", "PRI", "PRY", "SLV", "SPM", "SUR", "SXM", "TCA", "TTO", "URY", "USA", "VCT", "VEN", "VGB", "VIR"],
+            "Africa": ["AGO", "BDI", "BEN", "BFA", "BWA", "CAF", "CIV", "CMR", "COD", "COG", "COM", "CPV", "DJI", "DZA", "EGY", "ERI", "ESH", "ETH", "GAB", "GHA", "GIN", "GMB", "GNB", "GNQ", "IOT", "KEN", "LBR", "LBY", "LSO", "MAR", "MDG", "MLI", "MOZ", "MRT", "MUS", "MYT", "MWI", "NAM", "NER", "NGA", "REU", "RWA", "SDN", "SEN", "SHN", "SLE", "SOM", "SSD", "STP", "SWZ", "SYC", "TCD", "TGO", "TUN", "TZA", "UGA", "ZAF", "ZMB", "ZWE"],
+            "Asia": ["AFG", "ARE", "ARM", "AZE", "BGD", "BHR", "BRN", "BTN", "CHN", "HKG", "IDN", "IND", "IRN", "IRQ", "JPN", "JOR", "KAZ", "KGZ", "KHM", "KOR", "KWT", "LAO", "LBN", "LKA", "MAC", "MDV", "MMR", "MNG", "MYS", "NPL", "OMN", "PAK", "PHL", "PRK", "PSE", "QAT", "SAU", "SGP", "SYR", "THA", "TJK", "TKM", "TLS", "TUR", "TWN", "UZB", "VNM", "YEM"],
+            "Europe": ["ALB", "AND", "AUT", "BEL", "BGR", "BIH", "BLR", "CHE", "CYP", "CZE", "DEU", "DNK", "ESP", "EST", "FIN", "FRA", "FRO", "GBR", "GGY", "GIB", "GRC", "HRV", "HUN", "IMN", "IRL", "ISL", "ITA", "JEY", "LIE", "LTU", "LUX", "LVA", "MCO", "MDA", "MKD", "MLT", "MNE", "NLD", "NOR", "POL", "PRT", "ROU", "RUS", "SJM", "SMR", "SRB", "SVK", "SVN", "SWE", "UKR", "VAT"],
+            "Oceania": ["ASM", "AUS", "COK", "FJI", "FSM", "GUM", "KIR", "MHL", "MNP", "NCL", "NFK", "NRU", "NIU", "NZL", "PLW", "PNG", "PYF", "SLB", "TKL", "TON", "TUV", "VUT", "WSM"]
+        };
+
+        function getRegion(iso) {
+            for (let region in regions) {
+                if (regions[region].includes(iso)) return region;
+            }
+            return null;
+        }
+
+        // 4. Styles
+        const defaultStyle = { fillColor: '#dddddd', weight: 1, color: 'white', fillOpacity: 1 };
+        
+        // --- DIFFERENT HOVER COLORS ---
+        const blueHover = { fillColor: '#3498db', weight: 2, color: 'white', fillOpacity: 1 };
+        const greyHover = { fillColor: '#888888', weight: 2, color: 'white', fillOpacity: 1 }; // Europe's Specific Grey
+
+        var geojsonLayer;
+
+        function onEachFeature(feature, layer) {
+            const iso = feature.id;
+            const regionName = getRegion(iso);
+
+            layer.bindTooltip(regionName ? regionName : feature.properties.name, { 
+                sticky: true, 
+                className: "custom-tooltip" 
+            });
+
+            layer.on({
+                mouseover: function(e) {
+                    if (!regionName) return;
+
+                    // Apply Medium-Dark Grey IF Europe, otherwise Blue
+                    const activeStyle = (regionName === "Europe") ? greyHover : blueHover;
+
+                    geojsonLayer.eachLayer(function(l) {
+                        if (getRegion(l.feature.id) === regionName) {
+                            l.setStyle(activeStyle);
+                        }
+                    });
+                },
+                mouseout: function(e) {
+                    geojsonLayer.resetStyle();
+                },
+                click: function(e) {
+                    const url = divisionLinks[regionName];
+                    if (url && url !== "") {
+                        window.open(url, '_blank');
+                    }
+                }
+            });
+        }
+
+        // 5. Load Data
+        fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
+            .then(res => res.json())
+            .then(data => {
+                geojsonLayer = L.geoJSON(data, {
+                    style: defaultStyle,
+                    onEachFeature: onEachFeature
+                }).addTo(map);
+            });
+
+    </script>
+</body>
+</html>
