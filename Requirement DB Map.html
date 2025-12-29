@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requirements by State</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+          crossorigin=""/>
+    
+    <style>
+        /* --- SharePoint-style Formatting --- */
+        body {
+            margin: 0;
+            padding: 20px; 
+            font-family: "Segoe UI", "Segoe UI Web (West European)", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+            background-color: transparent; 
+            color: #323130; 
+            box-sizing: border-box;
+            height: 100vh;
+            overflow: hidden; /* Prevents scrollbars if map fits perfectly */
+        }
+
+        /* The Title */
+        h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            margin-top: 0;
+            color: #323130;
+        }
+
+        /* The Map - Full Width, Auto-Calculated Height */
+        #map {
+            width: 100%;
+            /* Height is 100% of viewport minus the title/padding space */
+            height: calc(100vh - 80px); 
+            background-color: #ffffff;
+            border: none; /* No border box */
+        }
+
+        /* Tooltip Styling (Microsoft Style) */
+        .custom-tooltip {
+            background: #ffffff;
+            border: 1px solid #edebe9;
+            padding: 8px 12px;
+            font-family: "Segoe UI", sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 3.2px 7.2px 0 rgba(0,0,0,0.13), 0 0.6px 1.8px 0 rgba(0,0,0,0.11);
+            color: #323130;
+            border-radius: 2px;
+        }
+
+        /* Legend Styling */
+        .legend {
+            font-family: "Segoe UI", sans-serif;
+            font-size: 12px;
+            line-height: 18px;
+            color: #323130;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px;
+            border: 1px solid #d2d0ce;
+            border-radius: 2px;
+            box-shadow: 0 1.6px 3.6px 0 rgba(0,0,0,0.13);
+        }
+        .legend i {
+            width: 16px;
+            height: 16px;
+            float: left;
+            margin-right: 8px;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Requirements by State</h2>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
+            crossorigin=""></script>
+
+    <script>
+        // 1. Initialize the Map
+        var map = L.map('map', {
+            center: [25, 0], 
+            zoom: 2,
+            minZoom: 2,
+            maxZoom: 8,
+            attributionControl: false,
+            zoomControl: true,
+            scrollWheelZoom: true 
+        });
+
+        // 2. The Configuration Data (Full Verified List)
+        const countryData = {
+            // ==========================================
+            // STATUS: RATIFIED (State Parties)
+            // Color: Navy Blue (#000080)
+            // ==========================================
+            "AFG": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=1&e=zgcoah" },
+            "ALB": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=2&e=l8iDnj" },
+            "AND": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=3&e=w88D0K" },
+            "ATG": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=121&e=sNzlgc" },
+            "ARG": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=4&e=9wOMSa" },
+            "ARM": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=122&e=xMxBHf" },
+            "AUS": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=5&e=7ngL4s" },
+            "AUT": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=6&e=0xrdj2" },
+            "BGD": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=7&e=YYtcje" },
+            "BRB": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=8&e=NxHqXy" },
+            "BEL": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=9&e=CHQEaI" },
+            "BLZ": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=127&e=KIh01K" },
+            "BEN": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=128&e=wCfo9J" },
+            "BOL": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=10&e=959TIy" },
+            "BIH": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=11&e=diYoXB" },
+            "BWA": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=12&e=8N5ShN" },
+            "BRA": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=13&e=G85dD6" },
+            "BGR": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=14&e=jVU7Yg" },
+            "BFA": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=15&e=zTlfF5" },
+            "CPV": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=131&e=8cPnIH" },
+            "KHM": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=132&e=NgznQY" },
+            "CAN": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=18&e=XOJqdF" },
+            "CAF": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=19&e=18sNGc" },
+            "TCD": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=20&e=EuULcR" },
+            "CHL": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=21&e=2Khi6x" },
+            "COL": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=23&e=fUo5DC" },
+            "COM": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=134&e=tMhh5h" },
+            "COG": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=24&e=M1LXUE" },
+            "COD": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=30&e=eS4cB6" },
+            "COK": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=135&e=err7GB" },
+            "CRI": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=25&e=314nYo" },
+            "CIV": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=26&e=kJBAMP" },
+            "HRV": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=27&e=AcsA5L" },
+            "CYP": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=28&e=CBBx5B" },
+            "CZE": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=29&e=gB3o3h" },
+            "DNK": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=31&e=b8XhHB" },
+            "DJI": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=137&e=rWIxRN" },
+            "DMA": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=32&e=05QOZg" },
+            "DOM": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=33&e=hrl2Xc" },
+            "ECU": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=34&e=dzM6s0" },
+            "SLV": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=139&e=fZWQK4" },
+            "EST": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=36&e=1OsyxE" },
+            "FJI": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=43&e=k75VCc" },
+            "FIN": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=143&e=kEiO9X" },
+            "FRA": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=44&e=QSWmdn" },
+            "GAB": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=144&e=mLaicb" },
+            "GMB": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=45&e=LIpgRu" },
+            "GEO": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=47&e=3Vu8c4" },
+            "DEU": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=48&e=lHiLYo" },
+            "GHA": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=49&e=EWp3z3" },
+            "GRC": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=50&e=lwsh1A" },
+            "GRD": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=145&e=wbIOhW" },
+            "GTM": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=51&e=Cze3yv" },
+            "GIN": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=52&e=6yn5zZ" },
+            "GUY": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=53&e=Sd64lh" },
+            "HND": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=148&e=4xraLw" },
+            "HUN": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=54&e=APvKsJ" },
+            "ISL": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=55&e=1tKFVH" },
+            "IRL": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=58&e=0O34zU" },
+            "ITA": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=59&e=oPCrEx" },
+            "JPN": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=60&e=OlC6I7" },
+            "JOR": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=61&e=3KjQPB" },
+            "KEN": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=62&e=oVoVwc" },
+            "KIR": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=155&e=Tuhi5I" },
+            "KOR": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=88&e=IoLphe" },
+            "LVA": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=64&e=blfmgj" },
+            "LSO": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=161&e=2gQXrL" },
+            "LBR": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=65&e=c29kDT" },
+            "LIE": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=67&e=fsv15h" },
+            "LTU": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=68&e=2PYuBN" },
+            "LUX": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=69&e=bRksYh" },
+            "MDG": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=162&e=Yc5xXS" },
+            "MWI": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=163&e=xiEfSq" },
+            "MDV": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=165&e=jmNh6T" },
+            "MLI": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=70&e=Mr2EX4" },
+            "MLT": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=71&e=IEizvD" },
+            "MHL": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=166&e=VnO5As" },
+            "MUS": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=73&e=qHzbPx" },
+            "MEX": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=74&e=wCtPzQ" },
+            "MDA": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=168&e=16QcjV" },
+            "MNG": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=170&e=yJOT8C" },
+            "MNE": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=171&e=WVVORi" },
+            "NAM": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=76&e=2fAhFA" },
+            "NRU": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=174&e=QJ9ONq" },
+            "NLD": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=77&e=TUi3jE" },
+            "NZL": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=78&e=Az3ZmF" },
+            "NER": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=79&e=eAvMh2" },
+            "NGA": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=80&e=kOVYHK" },
+            "MKD": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=202&e=zjlx1Y" },
+            "NOR": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=81&e=AIwhVp" },
+            "PSE": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=180&e=BfntyQ" },
+            "PAN": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=82&e=agO7Qv" },
+            "PRY": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=83&e=pzsBO8" },
+            "PER": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=84&e=rnAh2D" },
+            "POL": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=86&e=gGtwwj" },
+            "PRT": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=87&e=hnRUFs" },
+            "ROU": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=89&e=chrbem" },
+            "KNA": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=185&e=TjQO2x" },
+            "LCA": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=186&e=DZzgeE" },
+            "VCT": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=187&e=Ntk9NI" },
+            "WSM": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=188&e=VjAGaw" },
+            "SMR": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=189&e=y4Yv4d" },
+            "SEN": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=90&e=FfcwHf" },
+            "SRB": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=91&e=Q9GfDt" },
+            "SYC": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=92&e=UEKT6F" },
+            "SLE": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=192&e=PNcXco" },
+            "SVK": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=194&e=WdNpHh" },
+            "SVN": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=94&e=nrGOKD" },
+            "ZAF": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=197&e=9EPX7t" },
+            "ESP": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=95&e=agqI8f" },
+            "SUR": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=98&e=0KrXs0" },
+            "SWE": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=99&e=NRZQbr" },
+            "CHE": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=100&e=PW7A5b" },
+            "TJK": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=200&e=PxsqSs" },
+            "TZA": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=201&e=XouGOk" },
+            "TLS": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=102&e=ya6Wtq" },
+            "TTO": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=205&e=gQN4wZ" },
+            "TUN": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=103&e=kb8pSS" },
+            "UGA": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=105&e=l04Efm" },
+            "UKR": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=106&e=zNHqv9" }, 
+            "GBR": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=112&e=bUUPAi" },
+            "URY": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=116&e=uBCeB3" },
+            "VUT": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=211&e=f6cluI" },
+            "VEN": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=212&e=PoWxG0" },
+            "ZMB": { status: "ratified", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=215&e=KxH7NP" },
+
+            // ==========================================
+            // STATUS: SIGNED ONLY (Signatories)
+            // Color: Sky Blue (#87CEEB)
+            // ==========================================
+            "DZA": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=119&e=DELY4y" },
+            "AGO": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=120&e=TDbzOZ" },
+            "BHS": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=124&e=kK6dSt" },
+            "BHR": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=125&e=pef0Yj" },
+            "CMR": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=17&e=czp14U" },
+            "EGY": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=138&e=37dtVi" },
+            "ERI": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=141&e=tQO0Yx" },
+            "GNB": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=146&e=E3aod7" },
+            "HTI": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=147&e=aZ9Kok" },
+            "IRN": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=57&e=LHVVYC" },
+            "ISR": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=152&e=VJrkVk" },
+            "JAM": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=153&e=f5UNfv" },
+            "KWT": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=158&e=Qyg97n" },
+            "KGZ": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=159&e=apGEcn" },
+            "MCO": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=169&e=wAUhjw" },
+            "MAR": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=172&e=JiVPcC" },
+            "MOZ": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=173&e=3y4Syo" },
+            "OMN": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=177&e=grpgeF" },
+            "RUS": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=183&e=Z3wYTI" },
+            "STP": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=190&e=nO8ult" },
+            "SLB": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=195&e=IYGNbp" },
+            "SDN": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=97&e=qiRvMB" },
+            "SYR": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=199&e=KUWNgI" },
+            "THA": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=101&e=lEQQjO" },
+            "ARE": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=209&e=5ql5NL" },
+            "USA": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=113&e=GTQzDr" },
+            "UZB": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=210&e=Ig57aB" },
+            "YEM": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=214&e=MSEiVO" },
+            "ZWE": { status: "signed_only", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=216&e=UTqiEW" },
+
+            // ==========================================
+            // STATUS: NON-PARTY (or Withdrawn)
+            // Color: Light Gray (#dddddd)
+            // ==========================================
+            "PHL": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=85&e=elfdtK" },
+            "BDI": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=16&e=M4QRJq" },
+            "MYS": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=164&e=hZHaMx" },
+            "AZE": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=123&e=927K8c" },
+            "BLR": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=126&e=XbEFBK" },
+            "BTN": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=129&e=Af5q0g" },
+            "BRN": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=130&e=Ofe0zP" },
+            "CHN": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=133&e=gGr77p" },
+            "CUB": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=136&e=zLww48" },
+            "GNQ": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=140&e=DeYtfw" },
+            "ETH": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=142&e=bhsjm6" },
+            "IND": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=149&e=XkrsRC" },
+            "IDN": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=150&e=0WJd7o" },
+            "IRQ": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=151&e=uZe8cj" },
+            "KAZ": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=154&e=sN2Yst" },
+            "PRK": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=156&e=3vAc1t" },
+            "LAO": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=160&e=qBBLHK" },
+            "LBN": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=217&e=rcip62" },
+            "LBY": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=66&e=f1mTyl" },
+            "MRT": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=72&e=hkvBFi" },
+            "FSM": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=167&e=RZ3tqS" },
+            "MMR": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=75&e=nOgQbB" },
+            "NPL": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=175&e=VKarb8" },
+            "NIC": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=176&e=jJnZzl" },
+            "PAK": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=178&e=upqUqi" },
+            "PLW": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=179&e=EyfsIk" },
+            "PNG": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=181&e=52iMEx" },
+            "QAT": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=182&e=T5LLQN" },
+            "RWA": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=184&e=iYPNff" },
+            "SAU": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=191&e=OQV7ev" },
+            "SGP": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=193&e=V1PFYG" },
+            "SOM": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=196&e=lmj5Mw" },
+            "SSD": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=198&e=Zhv7Dd" },
+            "LKA": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=96&e=7XJNg4" },
+            "SWZ": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=218&e=fHFCJl" },
+            "TGO": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=203&e=EY9Eil" },
+            "TON": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=204&e=mn2eqs" },
+            "TUR": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=206&e=bfg0vM" },
+            "TKM": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=207&e=27kkaX" },
+            "TUV": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=208&e=ZTuWTy" },
+            "VNM": { status: "non_party", url: "https://iccint.sharepoint.com/sites/OTP-IOP-EAU/Lists/StateOrg/DispForm.aspx?ID=213&e=WSU3bz" },
+            "VAT": { status: "non_party", url: "" },
+            "TWN": { status: "non_party", url: "" }
+        };
+
+        // 3. Style Function
+        function getCountryStyle(feature) {
+            var isoCode = feature.id; 
+            var countryInfo = countryData[isoCode];
+            var fillColor = '#dddddd'; // Default Gray
+
+            if (countryInfo) {
+                if (countryInfo.status === 'ratified') {
+                    fillColor = '#000080'; // Navy Blue
+                } else if (countryInfo.status === 'signed_only') {
+                    fillColor = '#87CEEB'; // Sky Blue
+                }
+            }
+
+            return {
+                fillColor: fillColor,
+                weight: 1,           // Border width
+                opacity: 1,
+                color: 'white',      // Border color
+                fillOpacity: 1
+            };
+        }
+
+        // 4. Interaction Function
+        function onEachFeature(feature, layer) {
+            var isoCode = feature.id;
+            var countryInfo = countryData[isoCode];
+            var countryName = feature.properties.name;
+
+            // Add Tooltip (Hover)
+            layer.bindTooltip(countryName, {
+                permanent: false,
+                className: "custom-tooltip",
+                direction: "top"
+            });
+
+            // Mouse Events
+            layer.on({
+                mouseover: function(e) {
+                    var layer = e.target;
+                    layer.setStyle({
+                        fillColor: '#ff7800', // Highlight Orange
+                        weight: 2
+                    });
+                    layer.bringToFront();
+                },
+                mouseout: function(e) {
+                    geojsonLayer.resetStyle(e.target);
+                },
+                click: function(e) {
+                    if (countryInfo && countryInfo.url) {
+                        window.open(countryInfo.url, '_blank');
+                    }
+                }
+            });
+        }
+
+        // 5. Fetch Data and Render
+        var geojsonLayer;
+        
+        fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("HTTP error " + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                geojsonLayer = L.geoJSON(data, {
+                    style: getCountryStyle,
+                    onEachFeature: onEachFeature
+                }).addTo(map);
+            })
+            .catch(error => {
+                console.error('Error loading the Map Data:', error);
+                document.getElementById('map').innerHTML = "<h3 style='text-align:center; padding-top:20px; font-family: Segoe UI'>Error loading map data. Please check console.</h3>";
+            });
+
+        // 6. Add Legend
+        var legend = L.control({position: 'bottomright'});
+        legend.onAdd = function (map) {
+            var div = L.DomUtil.create('div', 'legend');
+            div.innerHTML += '<i style="background: #000080"></i> Ratified (State Party)<br>';
+            div.innerHTML += '<i style="background: #87CEEB"></i> Signed Only<br>';
+            div.innerHTML += '<i style="background: #dddddd"></i> Non-Party / Withdrawn<br>';
+            return div;
+        };
+        legend.addTo(map);
+
+    </script>
+</body>
+</html>
